@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # ProxiSpeak — Week 2 Review Prototype
 
 A runnable prototype of a proximity-based virtual office. Includes the React Canvas world, Socket.IO movement/signaling, MongoDB GeoJSON schema + `2dsphere` index + `$near` query, and browser WebRTC audio negotiation restricted to peers within 100 pixels.
@@ -63,6 +62,3 @@ The GeoJSON point is `[x / 111320, y / 111320]`; this keeps coordinates within v
 - Current audio connection cleanup is proximity-driven; large meshes need stricter connection budgeting and robust re-negotiation.
 - MongoDB query latency is not yet benchmarked. Measure server query duration before claiming the <20 ms target.
 - Redis Pub/Sub and horizontal Socket.IO scaling are Week 3, not implemented here.
-=======
-# Proxi_Speak
->>>>>>> 93c227613b8cf4a24b07f745437c059b43cb37b7

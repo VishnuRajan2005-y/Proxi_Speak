@@ -86,7 +86,7 @@ export default function App() {
     }
   }, []);
 
-  const createPeer = useCallback(peerId => {
+  const createPeer = useCallback((peerId, shouldAddLocalTracks = true) => {
     const existing = pcsRef.current.get(peerId);
     if (existing) return existing;
 
@@ -135,7 +135,7 @@ export default function App() {
       if (['failed', 'closed'].includes(pc.connectionState)) closePeer(peerId);
     };
 
-    addLocalTracks(pc);
+    if (shouldAddLocalTracks) addLocalTracks(pc);
     return pc;
   }, [addLocalTracks, closePeer, disconnectPeerAudio, ensureAudioContext]);
 
@@ -201,7 +201,7 @@ export default function App() {
     });
     socket.on('rtc:offer', async ({ fromId, offer }) => {
       try {
-        const pc = createPeer(fromId);
+        const pc = createPeer(fromId, false);
         const peerState = peerStatesRef.current.get(fromId);
         if (!peerState) return;
 
@@ -214,6 +214,7 @@ export default function App() {
           await pc.setLocalDescription({ type: 'rollback' });
         }
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        addLocalTracks(pc);
         await flushPendingCandidates(fromId, pc);
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
@@ -225,10 +226,11 @@ export default function App() {
     socket.on('rtc:answer', async ({ fromId, answer }) => {
       const pc = pcsRef.current.get(fromId);
       const peerState = peerStatesRef.current.get(fromId);
-      if (!pc || !peerState || peerState.ignoreOffer || pc.signalingState !== 'have-local-offer') return;
+      if (!pc || !peerState || pc.signalingState !== 'have-local-offer') return;
 
       try {
         await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        peerState.ignoreOffer = false;
         await flushPendingCandidates(fromId, pc);
       } catch (error) {
         console.error('Could not accept WebRTC answer', error);
@@ -260,7 +262,7 @@ export default function App() {
       audioCtxRef.current = null;
       if (context && context.state !== 'closed') context.close().catch(() => {});
     };
-  }, [closePeer, createPeer]);
+  }, [addLocalTracks, closePeer, createPeer]);
 
   const join = () => {
     if (!name.trim()) {
